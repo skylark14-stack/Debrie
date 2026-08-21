@@ -1,9 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, useTexture, Html } from '@react-three/drei';
+import { OrbitControls, Stars, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
-
-const EARTH_RADIUS = 6.371; // 1 unit = 1000 km
 
 const phases = [
   { id: 1, title: 'Satellite in Operation', desc: 'The satellite is functioning normally in its nominal high orbit.' },
@@ -13,25 +11,7 @@ const phases = [
   { id: 5, title: 'Surviving Space Debris', desc: 'Dense components survive and become highly dangerous space shrapnel.' },
 ];
 
-const events = [
-  { id: 1, name: "2007 Fengyun-1C ASAT", alt: 865, count: 3500, risk: "High", color: "#FF6259", inc: 98 },
-  { id: 2, name: "2009 Cosmos-2251 & Iridium 33", alt: 789, count: 2300, risk: "High", color: "#FF6259", inc: 74 },
-  { id: 3, name: "1996 Pegasus HAPS", alt: 625, count: 500, risk: "Medium", color: "#FFB454", inc: 28 },
-  { id: 4, name: "2021 Cosmos-1408 ASAT", alt: 480, count: 1500, risk: "High", color: "#FF6259", inc: 82 },
-  { id: 5, name: "1986 Spot-1 / Ariane", alt: 800, count: 490, risk: "Medium", color: "#FFB454", inc: 98 },
-  { id: 6, name: "1961 Transit 4A", alt: 950, count: 300, risk: "Medium", color: "#FFB454", inc: 66 },
-  { id: 7, name: "2006 TOPAZ", alt: 800, count: 100, risk: "Low", color: "#3ED9A0", inc: 70 },
-  { id: 8, name: "2000 CBERS-1", alt: 750, count: 300, risk: "Medium", color: "#FFB454", inc: 98 },
-  { id: 9, name: "2019 Mission Shakti", alt: 283, count: 400, risk: "Medium", color: "#FFB454", inc: 28 },
-  { id: 10, name: "1985 Solwind ASAT", alt: 525, count: 280, risk: "Low", color: "#3ED9A0", inc: 55 },
-  { id: 11, name: "2012 Briz-M", isElliptical: true, perigee: 265, apogee: 11600, count: 500, risk: "Medium", color: "#FFB454", inc: 49 },
-  { id: 12, name: "1970 Cosmos-382", isElliptical: true, perigee: 1000, apogee: 5000, count: 180, risk: "Low", color: "#3ED9A0", inc: 51 },
-  { id: 13, name: "2022 Long March 6A", isElliptical: true, perigee: 500, apogee: 1000, count: 500, risk: "Medium", color: "#FFB454", inc: 98 },
-  { id: 14, name: "2008 USA-193", alt: 240, count: 170, risk: "Low", color: "#3ED9A0", inc: 58 },
-  { id: 15, name: "1998 Zenit-2", alt: 850, count: 200, risk: "Low", color: "#3ED9A0", inc: 71 }
-];
-
-function EarthBackground({ showRings = false }) {
+function EarthBackground() {
   const earthRef = useRef();
   const texture = useTexture('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
   
@@ -42,34 +22,30 @@ function EarthBackground({ showRings = false }) {
   });
   
   return (
-    <group position={showRings ? [0, -5, 0] : [0, 0, 0]}>
+    <group position={[0, -5, 0]}>
       {/* Earth Surface */}
       <mesh ref={earthRef}>
-        <sphereGeometry args={[showRings ? 10 : EARTH_RADIUS, 64, 64]} />
+        <sphereGeometry args={[10, 64, 64]} />
         <meshStandardMaterial map={texture} roughness={0.7} metalness={0.1} />
       </mesh>
       
       {/* Atmospheric Glow */}
       <mesh scale={[1.03, 1.03, 1.03]}>
-        <sphereGeometry args={[showRings ? 10 : EARTH_RADIUS, 64, 64]} />
+        <sphereGeometry args={[10, 64, 64]} />
         <meshBasicMaterial color="#4FD1FF" transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
       
-      {showRings && (
-        <>
-          {/* Low Earth Orbit (LEO) - Outer Ring (Nominal Orbit) */}
-          <mesh rotation={[Math.PI/2, 0, 0]}>
-            <torusGeometry args={[16, 0.02, 16, 100]} />
-            <meshBasicMaterial color="#3ED9A0" transparent opacity={0.3} />
-          </mesh>
-          
-          {/* Low Earth Orbit (LEO) - Inner Ring (Decaying Orbit) */}
-          <mesh rotation={[Math.PI/2, 0, 0]}>
-            <torusGeometry args={[13, 0.02, 16, 100]} />
-            <meshBasicMaterial color="#FFB454" transparent opacity={0.3} />
-          </mesh>
-        </>
-      )}
+      {/* Low Earth Orbit (LEO) - Outer Ring (Nominal Orbit) */}
+      <mesh rotation={[Math.PI/2, 0, 0]}>
+        <torusGeometry args={[16, 0.02, 16, 100]} />
+        <meshBasicMaterial color="#3ED9A0" transparent opacity={0.3} />
+      </mesh>
+      
+      {/* Low Earth Orbit (LEO) - Inner Ring (Decaying Orbit) */}
+      <mesh rotation={[Math.PI/2, 0, 0]}>
+        <torusGeometry args={[13, 0.02, 16, 100]} />
+        <meshBasicMaterial color="#FFB454" transparent opacity={0.3} />
+      </mesh>
     </group>
   );
 }
@@ -97,32 +73,37 @@ function SatelliteSimulation({ phase }) {
 
   const orbitAngle = useRef(0);
   const orbitRadius = useRef(16);
-  const orbitY = useRef(-5);
+  const orbitY = useRef(-5); // matches Earth center
 
   useFrame((state, delta) => {
-    orbitAngle.current += delta * 0.15;
+    // 1. Calculate the satellite's position in the massive orbit
+    orbitAngle.current += delta * 0.15; // Orbit speed
     
     if (phase === 1) {
       orbitRadius.current = THREE.MathUtils.lerp(orbitRadius.current, 16, 0.02);
       orbitY.current = THREE.MathUtils.lerp(orbitY.current, -5, 0.02);
     } else if (phase === 2) {
-      orbitRadius.current = THREE.MathUtils.lerp(orbitRadius.current, 13, 0.02);
+      orbitRadius.current = THREE.MathUtils.lerp(orbitRadius.current, 13, 0.02); // Drop to inner ring
       orbitY.current = THREE.MathUtils.lerp(orbitY.current, -5, 0.02);
     } else if (phase >= 3) {
-      orbitRadius.current = THREE.MathUtils.lerp(orbitRadius.current, 10, 0.015);
+      orbitRadius.current = THREE.MathUtils.lerp(orbitRadius.current, 10, 0.015); // Spiral into atmosphere
       orbitY.current -= delta * 0.5; 
     }
 
     const currentX = Math.cos(orbitAngle.current) * orbitRadius.current;
     const currentZ = Math.sin(orbitAngle.current) * orbitRadius.current;
 
+    // 2. Update camera and target to follow the satellite
     if (controlsRef.current && cameraGroupRef.current) {
+        // Move the pivot point of the camera to the satellite's position
         cameraGroupRef.current.position.set(currentX, orbitY.current, currentZ);
         controlsRef.current.target.set(currentX, orbitY.current, currentZ);
         controlsRef.current.update();
     }
 
+    // 3. Update satellite mesh rotation and effects
     if (group.current && phase < 4) {
+      // Keep satellite at local origin [0,0,0] inside the camera group
       group.current.position.set(0, 0, 0); 
       
       if (phase === 1) {
@@ -148,10 +129,11 @@ function SatelliteSimulation({ phase }) {
       }
     }
     
+    // 4. Explosion logic
     if (phase >= 4 && instancedMeshRef.current) {
       shrapnelData.forEach((d, i) => {
         d.pos.add(d.vel);
-        d.pos.y -= delta * 0.5;
+        d.pos.y -= delta * 0.5; // Continue to fall slightly relative to local origin
         
         d.rot.x += d.rotVel.x;
         d.rot.y += d.rotVel.y;
@@ -180,13 +162,14 @@ function SatelliteSimulation({ phase }) {
 
   return (
     <>
-      <OrbitControls ref={controlsRef} enablePan={false} minDistance={2} maxDistance={12} autoRotate={false} autoRotateSpeed={0.5} />
+      <OrbitControls ref={controlsRef} enablePan={false} minDistance={2} maxDistance={12} autoRotate={phase < 3} autoRotateSpeed={0.5} />
       
       <React.Suspense fallback={null}>
-         <EarthBackground showRings={true} />
+         <EarthBackground />
       </React.Suspense>
 
       <group ref={cameraGroupRef}>
+        {/* Intact Realistic Satellite */}
         {phase < 4 && (
           <group ref={group}>
             <mesh>
@@ -232,6 +215,7 @@ function SatelliteSimulation({ phase }) {
           </group>
         )}
 
+        {/* Surviving Shrapnel / Debris */}
         {phase >= 4 && (
           <instancedMesh ref={instancedMeshRef} args={[null, null, shrapnelCount]}>
             <dodecahedronGeometry args={[0.15, 0]} />
@@ -243,139 +227,10 @@ function SatelliteSimulation({ phase }) {
   );
 }
 
-
-
-function SpaceTrackDebrisItem({ item, hovered, setHovered, selectedDebris, setSelectedDebris }) {
-  const orbitGroupRef = useRef();
-  
-  const distFromCenter = Math.sqrt(item.x * item.x + item.y * item.y + item.z * item.z);
-  const altitudeStr = distFromCenter > EARTH_RADIUS 
-    ? `${((distFromCenter - EARTH_RADIUS) * 1000).toFixed(0)} km` 
-    : "Unknown";
-  const isHovered = hovered === item.id;
-  const isSelected = selectedDebris?.id === item.id;
-
-  const riskMod = item.id % 3;
-  let baseColor = '#3ED9A0'; // Low risk (green)
-  if (riskMod === 0) baseColor = '#FF6259'; // High risk (red)
-  else if (riskMod === 1) baseColor = '#FFB454'; // Medium risk (yellow)
-
-  const quaternion = useMemo(() => {
-    const q = new THREE.Quaternion();
-    const p = new THREE.Vector3(item.x, item.y, item.z).normalize();
-    
-    let seed = 0;
-    const idStr = String(item.id);
-    for (let i = 0; i < idStr.length; i++) seed += idStr.charCodeAt(i);
-    const randomAngle = (seed * 0.21) % (Math.PI * 2);
-    
-    const roll = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), randomAngle);
-    const align = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), p);
-    
-    q.multiplyQuaternions(align, roll);
-    return q;
-  }, [item.id, item.x, item.y, item.z]);
-
-  useFrame((state, delta) => {
-    if (orbitGroupRef.current) {
-      orbitGroupRef.current.rotation.z += delta * 0.02;
-    }
-  });
-
-  return (
-    <group quaternion={quaternion}>
-      <mesh>
-        <ringGeometry args={[distFromCenter - 0.015, distFromCenter + 0.015, 64]} />
-        <meshBasicMaterial color={baseColor} transparent opacity={isHovered || isSelected ? 0.8 : 0.35} side={THREE.DoubleSide} />
-      </mesh>
-
-      <group ref={orbitGroupRef}>
-        <group position={[distFromCenter, 0, 0]}>
-          <mesh 
-            onPointerOver={(e) => { e.stopPropagation(); setHovered(item.id) }}
-            onPointerOut={(e) => { e.stopPropagation(); setHovered(null) }}
-            onClick={(e) => { e.stopPropagation(); setSelectedDebris(item) }}
-            scale={isHovered || isSelected ? 2.5 : 1}
-          >
-            <sphereGeometry args={[0.15, 16, 16]} />
-            <meshBasicMaterial color={isHovered || isSelected ? '#FFFFFF' : baseColor} />
-          </mesh>
-          
-          {(isHovered || isSelected) && (
-            <Html distanceFactor={15} center zIndexRange={[100, 0]}>
-              <div style={{
-                background: 'rgba(17, 24, 39, 0.95)',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: isSelected ? `2px solid ${baseColor}` : `1px solid ${baseColor}`,
-                color: 'white',
-                fontSize: '13px',
-                pointerEvents: 'none',
-                whiteSpace: 'nowrap',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
-                transform: 'translate3d(0, -40px, 0) scale(1)',
-                animation: 'popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                transformOrigin: 'bottom center'
-              }}>
-                <style>
-                  {`
-                    @keyframes popIn {
-                      0% { transform: translate3d(0, -20px, 0) scale(0.5); opacity: 0; }
-                      100% { transform: translate3d(0, -40px, 0) scale(1); opacity: 1; }
-                    }
-                  `}
-                </style>
-                <strong style={{color: baseColor, fontSize: '15px'}}>{item.name}</strong><br/>
-                <div style={{ marginTop: '8px' }}>
-                  <span style={{ color: 'var(--text-dim)' }}>ID:</span> {item.id}<br/>
-                  <span style={{ color: 'var(--text-dim)' }}>Distance:</span> {altitudeStr}
-                </div>
-              </div>
-            </Html>
-          )}
-        </group>
-      </group>
-    </group>
-  );
-}
-
-function LiveSpaceTrackDebris({ debris, selectedDebris, setSelectedDebris }) {
-  const [hovered, setHovered] = useState(null)
-
-  return (
-    <group>
-      {debris.map((item) => (
-        <SpaceTrackDebrisItem 
-          key={item.id} 
-          item={item} 
-          hovered={hovered} 
-          setHovered={setHovered}
-          selectedDebris={selectedDebris}
-          setSelectedDebris={setSelectedDebris}
-        />
-      ))}
-    </group>
-  )
-}
-
 export default function DeorbitTracker() {
   const [currentPhase, setCurrentPhase] = useState(1);
   const [fuel, setFuel] = useState(100);
   const [isPlaying, setIsPlaying] = useState(false);
-  
-  const [liveDebris, setLiveDebris] = useState([]);
-  const [selectedDebris, setSelectedDebris] = useState(null);
-
-  useEffect(() => {
-    fetch('/space-track.json')
-      .then(res => res.json())
-      .then(data => {
-        if (data.debris) {
-          setLiveDebris(data.debris)
-        }
-      })
-      .catch(err => console.error("Error fetching space-track data:", err))
-  }, [])
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -407,14 +262,12 @@ export default function DeorbitTracker() {
   }, [currentPhase, isPlaying]);
 
   return (
-    <div className="deorbit-page" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0 0 4rem 0' }}>
-      
-      {/* ---------------- SATELLITE SIMULATION (TOP) ---------------- */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0 0 2rem 0' }}>
       
       <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '0.5rem' }}>
-            <h2 style={{ fontSize: '2.5rem', color: 'var(--blue)', margin: 0 }}>Satellite Deorbit Tracker</h2>
+            <h2 style={{ fontSize: '2.5rem', color: 'var(--blue)', margin: 0 }}>Deorbit Tracker</h2>
             <button 
               onClick={() => {
                 if (!isPlaying && currentPhase === 5) {
@@ -466,7 +319,7 @@ export default function DeorbitTracker() {
       </div>
       
       {/* Landscape 3D Simulation */}
-      <div style={{ width: '100%', height: '500px', backgroundColor: 'var(--bg-2)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden', position: 'relative', marginBottom: '1.5rem' }}>
+      <div style={{ width: '100%', height: '55vh', backgroundColor: 'var(--bg-2)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden', position: 'relative', marginBottom: '1.5rem' }}>
         <Canvas camera={{ position: [0, 2, 8], fov: 45 }}>
           <color attach="background" args={['#080B14']} />
           <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
@@ -489,7 +342,7 @@ export default function DeorbitTracker() {
                 setCurrentPhase(p.id); 
                 if(p.id===1) setFuel(100); 
                 if(p.id>2) setFuel(0); 
-                setIsPlaying(false); 
+                setIsPlaying(false); // Pause when user manually clicks a phase
             }}
             style={{
               flex: '1 0 200px',
@@ -512,100 +365,6 @@ export default function DeorbitTracker() {
             </p>
           </div>
         ))}
-      </div>
-
-
-      {/* ---------------- LIVE SPACE-TRACK MAP (BOTTOM) ---------------- */}
-
-      <div style={{ marginTop: '4rem' }}>
-        <h2 style={{ fontSize: '2.5rem', color: 'var(--blue)', margin: '0 0 0.5rem 0' }}>Live Space-Track Map</h2>
-        <p style={{ color: 'var(--text-dim)', fontSize: '1rem', maxWidth: '800px', margin: '0 0 1.5rem 0' }}>
-            Visualizing 50 live tracked debris objects in low Earth orbit. Click any object for detailed telemetry.
-        </p>
-        
-        <div style={{ display: 'flex', gap: '1.5rem', width: '100%', height: '700px' }}>
-          
-          {/* 3D Canvas Container */}
-          <div style={{ flex: 1, backgroundColor: 'var(--bg-2)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden', position: 'relative' }}>
-            <Canvas camera={{ position: [0, 8, 25], fov: 45 }}>
-              <color attach="background" args={['#080B14']} />
-              <ambientLight intensity={0.4} />
-              <directionalLight position={[10, 10, 5]} intensity={1.5} color="#ffffff" />
-              <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-              
-              <React.Suspense fallback={null}>
-                 <EarthBackground showRings={false} />
-              </React.Suspense>
-              
-              <LiveSpaceTrackDebris debris={liveDebris} selectedDebris={selectedDebris} setSelectedDebris={setSelectedDebris} />
-              
-              <OrbitControls 
-                enablePan={true} 
-                minDistance={9} 
-                maxDistance={35} 
-                autoRotate={true} 
-                autoRotateSpeed={0.01}
-                rotateSpeed={0.5} 
-                zoomSpeed={0.8}
-                maxPolarAngle={Math.PI - 0.2}
-              />
-            </Canvas>
-          </div>
-
-          {/* Selected Debris Info Panel */}
-          {selectedDebris && (() => {
-            const item = selectedDebris;
-            const shape = item.id % 2 === 0 ? 'Irregular fragment' : 'Rocket body';
-            const size = `${(item.id % 40) + 10} cm`;
-            const mass = `~${((item.id % 100) / 10 + 1).toFixed(1)} kg`;
-            const distFromCenter = Math.sqrt(item.x * item.x + item.y * item.y + item.z * item.z);
-            const altitudeStr = distFromCenter > EARTH_RADIUS ? `${((distFromCenter - EARTH_RADIUS) * 1000).toFixed(0)} km` : "Unknown";
-            const riskMod = item.id % 3;
-            let risk = 'Low';
-            let riskColor = '#3ED9A0';
-            if (riskMod === 0) { risk = 'High'; riskColor = '#FF6259'; }
-            else if (riskMod === 1) { risk = 'Medium'; riskColor = '#FFB454'; }
-            
-            return (
-              <div style={{ width: '380px', backgroundColor: 'var(--panel)', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.5rem', color: 'var(--text)', margin: '0 0 0.5rem 0' }}>{item.name}</h3>
-                  <div style={{ display: 'inline-block', padding: '2px 8px', border: `1px solid ${riskColor}`, color: riskColor, fontSize: '0.7rem', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                    {item.status || 'FRAGMENT'}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ color: 'var(--text-dim)' }}>Shape</span>
-                    <span style={{ color: 'var(--text)', fontWeight: 500 }}>{shape}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ color: 'var(--text-dim)' }}>Size</span>
-                    <span style={{ color: 'var(--text)', fontWeight: 500 }}>{size}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ color: 'var(--text-dim)' }}>Altitude</span>
-                    <span style={{ color: 'var(--text)', fontWeight: 500 }}>{altitudeStr}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ color: 'var(--text-dim)' }}>Mass</span>
-                    <span style={{ color: 'var(--text)', fontWeight: 500 }}>{mass}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ color: 'var(--text-dim)' }}>Origin</span>
-                    <span style={{ color: 'var(--text)', fontWeight: 500, textAlign: 'right', maxWidth: '200px' }}>Space-Track NORAD {item.id}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0' }}>
-                    <span style={{ color: 'var(--text-dim)' }}>Risk level</span>
-                    <span style={{ color: risk === 'High' ? '#FF6259' : '#FFB454', fontWeight: 500 }}>{risk}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
-        </div>
       </div>
       
       <style>{`

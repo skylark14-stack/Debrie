@@ -1,6 +1,7 @@
 fastapi
 uvicorn
-motor
+supabase
+pydantic-settings
 pydantic
 sgp4
 apscheduler

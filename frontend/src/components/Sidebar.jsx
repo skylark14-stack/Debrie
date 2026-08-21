@@ -30,19 +30,26 @@ export default function Sidebar({ isOpen, toggleSidebar, onNavigate }) {
         </div>
 
         <div 
+          className="nav-item" 
+          onClick={() => onNavigate('ground-relay')}
+        >
+          <span>Launch Ground Relay</span>
+        </div>
+
+        <div 
           className={`nav-item ${homeExpanded ? 'active' : ''}`} 
           onClick={() => setHomeExpanded(!homeExpanded)}
         >
           <span>Simulations & Tools</span>
-          <svg className={`chevron ${homeExpanded ? 'expanded' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg className={`chevron ${homeExpanded ? 'open' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>
         
-        <div className={`sub-menu ${homeExpanded ? 'expanded' : ''}`}>
-          <div className="sub-nav-item" onClick={() => onNavigate('deorbit-tracker')}>Deorbit Tracker</div>
-          <div className="sub-nav-item" onClick={() => onNavigate('debris-analysis')}>Debris Analysis</div>
-          <div className="sub-nav-item" onClick={() => onNavigate('collision-risk')}>Collision Risk</div>
+        <div className={`sub-menu ${homeExpanded ? 'open' : ''}`}>
+          <div className="sub-menu-item" onClick={() => onNavigate('deorbit-tracker')}>Deorbit Tracker</div>
+          <div className="sub-menu-item" onClick={() => onNavigate('orbital-watch')}>Orbital Watch</div>
+          <div className="sub-menu-item" onClick={() => onNavigate('collision-risk')}>Collision Risk</div>
         </div>
 
       </aside>

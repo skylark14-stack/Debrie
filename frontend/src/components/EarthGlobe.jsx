@@ -1,12 +1,10 @@
-import React, { useRef, useMemo, useEffect } from 'react'
+import React, { useRef, useMemo, useEffect, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, useTexture } from '@react-three/drei'
+import { OrbitControls, useTexture, Html } from '@react-three/drei'
 import * as THREE from 'three'
 
 function Earth() {
   const earthRef = useRef()
-  
-  // High-res realistic earth map
   const texture = useTexture('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
   
   return (
@@ -14,6 +12,80 @@ function Earth() {
       <sphereGeometry args={[1, 64, 64]} />
       <meshStandardMaterial map={texture} roughness={0.7} metalness={0.1} />
     </mesh>
+  )
+}
+
+function LiveDebris() {
+  const [debris, setDebris] = useState([])
+  const [hovered, setHovered] = useState(null)
+
+  useEffect(() => {
+    fetch('/space-track.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data.debris) {
+          setDebris(data.debris)
+        }
+      })
+      .catch(err => console.error("Error fetching live debris:", err))
+  }, [])
+
+  // The backend assumes Earth is 6.371 units, but this scene uses 1 unit.
+  const groupRef = useRef()
+
+  const scale = 1 / 6.371;
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.15;
+    }
+  })
+
+  return (
+    <group ref={groupRef}>
+      {debris.map((item) => (
+        <mesh 
+            key={item.id} 
+            position={[item.x * scale, item.y * scale, item.z * scale]}
+            onPointerOver={(e) => { e.stopPropagation(); setHovered(item.id) }}
+            onPointerOut={(e) => { e.stopPropagation(); setHovered(null) }}
+            scale={hovered === item.id ? 2.5 : 1}
+        >
+          <sphereGeometry args={[0.015, 16, 16]} />
+          <meshBasicMaterial color={hovered === item.id ? '#FFB454' : '#FF6259'} />
+          
+          {hovered === item.id && (
+            <Html distanceFactor={2.5} center>
+              <div style={{
+                background: 'rgba(17, 24, 39, 0.9)',
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: '1px solid var(--blue)',
+                color: 'white',
+                fontSize: '10px',
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                transform: 'translate3d(0, -30px, 0) scale(1)',
+                animation: 'popInGlobe 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                transformOrigin: 'bottom center'
+              }}>
+                <style>
+                  {`
+                    @keyframes popInGlobe {
+                      0% { transform: translate3d(0, -15px, 0) scale(0.5); opacity: 0; }
+                      100% { transform: translate3d(0, -30px, 0) scale(1); opacity: 1; }
+                    }
+                  `}
+                </style>
+                <strong style={{color: 'var(--blue)'}}>{item.name}</strong><br/>
+                NORAD ID: {item.id}
+              </div>
+            </Html>
+          )}
+        </mesh>
+      ))}
+    </group>
   )
 }
 
@@ -28,14 +100,11 @@ function DebrisInstanced() {
   const count2 = 1000;
   const count3 = 1000;
   
-  // To avoid "intersecting triangles" from vertex noise, we use solid base geometries.
-  // We will create the "weird" crash shapes by aggressively stretching, squashing,
-  // and rotating these solid blocks, ensuring they remain single, unbroken pieces.
   const [geo1, geo2, geo3] = useMemo(() => {
     return [
-      new THREE.DodecahedronGeometry(1, 0), // Base for chunky, rocky metal fragments
-      new THREE.BoxGeometry(1, 1, 1),       // Base for crushed plates, panels, and beams
-      new THREE.CylinderGeometry(0.5, 0.5, 2, 5) // Base for bent pipes, struts, and rods
+      new THREE.DodecahedronGeometry(1, 0), 
+      new THREE.BoxGeometry(1, 1, 1),       
+      new THREE.CylinderGeometry(0.5, 0.5, 2, 5) 
     ]
   }, [])
   
@@ -83,30 +152,15 @@ function DebrisInstanced() {
         const dotParis = vx * vParis.x + vy * vParis.y + vz * vParis.z;
         const dotNorway = vx * vNorway.x + vy * vNorway.y + vz * vNorway.z;
         
-        // Base probability ensures debris is spread all around the Earth
         let spawnProbability = 0.15; 
         
-        // London vs Paris overlap resolution
-        // Because they are so close geographically, we must check which one we are closer to
         if (dotLondon > 0.98 || dotParis > 0.98) {
-            if (dotLondon > dotParis) {
-                spawnProbability = 1.0; // Max debris over London
-            } else {
-                spawnProbability = 0.02; // Very sparse over Paris
-            }
-        } 
-        // Sparse zone over Norway
-        else if (dotNorway > 0.95) {
-            spawnProbability = 0.04; 
-        }
-        // Dense zones over India and Brazil
-        else if (dotIndia > 0.85 || dotBrazil > 0.85) {
-            spawnProbability = 1.0;
-        }
+            if (dotLondon > dotParis) { spawnProbability = 1.0; } 
+            else { spawnProbability = 0.02; }
+        } else if (dotNorway > 0.95) { spawnProbability = 0.04; }
+        else if (dotIndia > 0.85 || dotBrazil > 0.85) { spawnProbability = 1.0; }
         
-        if (Math.random() > spawnProbability) {
-            continue; 
-        }
+        if (Math.random() > spawnProbability) continue; 
         
         const x = vx * radius;
         const y = vy * radius;
@@ -119,13 +173,9 @@ function DebrisInstanced() {
         
         let color;
         const randColor = Math.random();
-        if (randColor > 0.85) {
-            color = colorDarkRust; 
-        } else if (randColor > 0.4) {
-            color = colorScorchedMetal; 
-        } else {
-            color = colorDullSilver; 
-        }
+        if (randColor > 0.85) { color = colorDarkRust; } 
+        else if (randColor > 0.4) { color = colorScorchedMetal; } 
+        else { color = colorDullSilver; }
         
         arrays[type].push({
           pos: [x, y, z],
@@ -136,7 +186,6 @@ function DebrisInstanced() {
         i++;
       }
     }
-    
     return arrays;
   }, [])
 
@@ -154,21 +203,22 @@ function DebrisInstanced() {
       ref.current.instanceMatrix.needsUpdate = true;
       if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true;
     }
-    
     setupInstances(meshRef1, data1);
     setupInstances(meshRef2, data2);
     setupInstances(meshRef3, data3);
   }, [data1, data2, data3, dummy])
   
-  // Removed independent useFrame rotation so debris stays geographically locked to Earth
-
-  // Material: VERY rough, unpolished, and dull. 
-  // Flat shading combined with high-poly distorted geometry creates realistic shattered facets.
   const shrapnelMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    roughness: 0.9,  // Unpolished, dull, oxidized
-    metalness: 0.6,  // Still metal, but not shiny
-    flatShading: true // Crucial for the "shattered/torn" facet look on high-poly meshes
+    roughness: 0.9, 
+    metalness: 0.6, 
+    flatShading: true 
   }), [])
+
+  useFrame((state, delta) => {
+    if (meshRef1.current) meshRef1.current.rotation.y += delta * 0.1;
+    if (meshRef2.current) meshRef2.current.rotation.y += delta * 0.1;
+    if (meshRef3.current) meshRef3.current.rotation.y += delta * 0.1;
+  });
 
   return (
     <group>
@@ -188,11 +238,21 @@ export default function EarthGlobe() {
         <React.Suspense fallback={null}>
           <Earth />
         </React.Suspense>
+        
+        {/* Render the massive procedural background debris cloud */}
         <DebrisInstanced />
-        <OrbitControls enablePan={false} minDistance={1.2} maxDistance={12} autoRotate={true} autoRotateSpeed={0.3} rotateSpeed={0.4} zoomSpeed={0.6} />
+        
+        {/* Render the 50 live, clickable Space-Track debris items on top */}
+        <LiveDebris />
+        
+        <OrbitControls enablePan={false} minDistance={1.2} maxDistance={12} autoRotate={false} rotateSpeed={0.4} zoomSpeed={0.6} />
       </Canvas>
       <div style={{ position: 'absolute', bottom: '1rem', right: '1rem', backgroundColor: 'rgba(17, 24, 39, 0.8)', padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.75rem', border: '1px solid var(--border)' }}>
         Interactive • Drag to rotate • Scroll to zoom
+      </div>
+      <div style={{ position: 'absolute', top: '1rem', left: '1rem', backgroundColor: 'rgba(17, 24, 39, 0.8)', padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.75rem', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ width: '8px', height: '8px', backgroundColor: '#FF6259', borderRadius: '50%' }}></div>
+        Live Space-Track Data Active
       </div>
     </div>
   )

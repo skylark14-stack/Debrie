@@ -3,6 +3,7 @@ import EarthGlobe from './components/EarthGlobe'
 import Sidebar from './components/Sidebar'
 import GroundRelay from './components/GroundRelay'
 import DeorbitTracker from './components/DeorbitTracker'
+import OrbitalWatch from './components/OrbitalWatch'
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -90,11 +91,8 @@ function App() {
           <DeorbitTracker />
         )}
 
-        {currentPage === 'debris-analysis' && (
-          <div style={{ padding: '4rem 0', textAlign: 'center' }}>
-            <h2 style={{ color: 'var(--blue)', fontSize: '2rem' }}>Debris Analysis</h2>
-            <p style={{ color: 'var(--text-dim)' }}>Detailed spectrometry and tracking data coming soon...</p>
-          </div>
+        {currentPage === 'orbital-watch' && (
+          <OrbitalWatch />
         )}
 
         {currentPage === 'collision-risk' && (
