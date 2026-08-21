@@ -21,7 +21,7 @@ def read_root():
 @app.get("/api/health/db")
 def health_check_db(db: Client = Depends(get_db)):
     try:
-        return {"status": "ok", "supabase_url": db.supabase_url}
+        return {"status": "ok", "supabase_url": str(db.supabase_url)}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 

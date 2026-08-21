@@ -1,0 +1,5 @@
+fastapi
+httpx
+sgp4
+pydantic-settings
+supabase
