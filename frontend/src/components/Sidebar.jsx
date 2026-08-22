@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 export default function Sidebar({ isOpen, toggleSidebar, onNavigate }) {
   const [homeExpanded, setHomeExpanded] = useState(false);
+  const [susExpanded, setSusExpanded] = useState(false);
 
   return (
     <>
@@ -9,7 +10,7 @@ export default function Sidebar({ isOpen, toggleSidebar, onNavigate }) {
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         
         <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0 }}>OrbitGuard AI</h2>
+          <h2 style={{ margin: 0 }}>Vega AI</h2>
           <button 
             onClick={toggleSidebar} 
             style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.25rem', display: 'flex' }}
@@ -47,9 +48,24 @@ export default function Sidebar({ isOpen, toggleSidebar, onNavigate }) {
         </div>
         
         <div className={`sub-menu ${homeExpanded ? 'open' : ''}`}>
-          <div className="sub-menu-item" onClick={() => onNavigate('deorbit-tracker')}>Deorbit Tracker</div>
-          <div className="sub-menu-item" onClick={() => onNavigate('orbital-watch')}>Orbital Watch</div>
-          <div className="sub-menu-item" onClick={() => onNavigate('collision-risk')}>Collision Risk</div>
+          <div className="sub-menu-item" onClick={() => onNavigate('deorbit-tracker')}>Debris Tracker</div>
+          <div className="sub-menu-item" onClick={() => onNavigate('orbital-watch')}>Debris Analysis</div>
+          <div className="sub-menu-item" onClick={() => onNavigate('collision-risk')}>Collision Risk Calculations</div>
+        </div>
+
+        <div 
+          className={`nav-item ${susExpanded ? 'active' : ''}`} 
+          onClick={() => setSusExpanded(!susExpanded)}
+          style={{ marginTop: '1rem' }}
+        >
+          <span>Sustainable Space</span>
+          <svg className={`chevron ${susExpanded ? 'open' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        
+        <div className={`sub-menu ${susExpanded ? 'open' : ''}`}>
+          <div className="sub-menu-item" onClick={() => onNavigate('aura-concept')}>AURA Concept</div>
         </div>
 
       </aside>

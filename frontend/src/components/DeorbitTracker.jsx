@@ -414,8 +414,8 @@ export default function DeorbitTracker() {
       <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '0.5rem' }}>
-            <h2 style={{ fontSize: '2.5rem', color: 'var(--blue)', margin: 0 }}>Satellite Deorbit Tracker</h2>
-            <button 
+            <h2 style={{ fontSize: '2.5rem', color: 'var(--blue)', margin: 0 }}>Space Debris Tracker</h2>
+          <button 
               onClick={() => {
                 if (!isPlaying && currentPhase === 5) {
                    setCurrentPhase(1);

@@ -76,7 +76,7 @@ export default function OrbitalWatch() {
     <div style={{ padding: '2rem 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '2.5rem', color: 'var(--blue)', margin: '0 0 0.5rem 0' }}>Orbital Watch</h2>
+          <h2 style={{ fontSize: '2.5rem', color: 'var(--blue)', margin: '0 0 0.5rem 0' }}>Debris Analysis</h2>
           <p style={{ color: 'var(--text-dim)', fontSize: '1rem', maxWidth: '800px', margin: 0 }}>
             Categorize and analyze tracked orbital debris based on physical and orbital properties.
           </p>
@@ -148,6 +148,88 @@ export default function OrbitalWatch() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* AI Analysis Report Section */}
+      <div style={{ marginTop: '4rem', padding: '2rem', backgroundColor: 'var(--panel)', border: '1px solid var(--border)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h3 style={{ margin: 0, fontSize: '1.8rem', color: '#B464FF' }}>✨ AI Analysis Report</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ color: 'var(--text-dim)', fontSize: '0.9rem', fontWeight: 'bold' }}>Analysis Filter:</span>
+            <select 
+              value={groupBy} 
+              onChange={(e) => setGroupBy(e.target.value)}
+              style={{ 
+                padding: '0.5rem 1rem', 
+                backgroundColor: 'var(--bg)', 
+                color: 'var(--text)', 
+                border: '1px solid var(--border)', 
+                borderRadius: '6px',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="size">Size</option>
+              <option value="shape">Shape</option>
+              <option value="distance">Distance / Orbit</option>
+              <option value="risk">Risk Level</option>
+              <option value="material">Material Composition</option>
+            </select>
+          </div>
+        </div>
+
+        {debrisData.length > 0 && (
+          <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+            {/* Histogram */}
+            <div style={{ flex: 1.5, minWidth: '350px', padding: '1.5rem', backgroundColor: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <h4 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-dim)' }}>Distribution Histogram</h4>
+              <div style={{ display: 'flex', alignItems: 'flex-end', height: '200px', gap: '10px' }}>
+                {Object.entries(groupedData).map(([key, items]) => {
+                  const maxCount = Math.max(...Object.values(groupedData).map(v => v.length));
+                  const heightPct = Math.max(5, (items.length / maxCount) * 100);
+                  return (
+                    <div key={key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', width: '100%', padding: '0 5px' }}>
+                        <div style={{ 
+                          width: '100%', 
+                          height: `${heightPct}%`, 
+                          backgroundColor: 'var(--blue)', 
+                          borderRadius: '4px 4px 0 0', 
+                          opacity: 0.85, 
+                          transition: 'height 0.4s ease-out' 
+                        }}></div>
+                      </div>
+                      <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--text-dim)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }} title={key}>
+                        {key}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text)', marginTop: '0.25rem' }}>{items.length}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* AI Generated Text */}
+            <div style={{ flex: 1, minWidth: '300px', padding: '1.5rem', backgroundColor: 'rgba(180, 100, 255, 0.05)', borderRadius: '8px', border: '1px dashed #B464FF' }}>
+              <h4 style={{ margin: '0 0 1rem 0', color: '#B464FF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+                AI Insights Generated
+              </h4>
+              <p style={{ color: 'var(--text)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                Analysis of the current dataset grouped by <strong style={{color:'var(--blue)', textTransform:'capitalize'}}>{groupBy}</strong> reveals <strong>{Object.keys(groupedData).length} distinct clusters</strong>. 
+                The largest concentration of tracked debris falls into the <strong>{Object.entries(groupedData).sort((a,b)=>b[1].length - a[1].length)[0]?.[0]}</strong> category, accounting for <strong style={{color:'var(--red)'}}>{Math.round((Object.entries(groupedData).sort((a,b)=>b[1].length - a[1].length)[0]?.[1].length / debrisData.length) * 100)}%</strong> of all detected objects.
+              </p>
+              <div style={{ padding: '1rem', background: 'var(--panel)', borderLeft: '3px solid #B464FF', borderRadius: '4px' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Automated Recommendation</div>
+                <div style={{ color: 'var(--text)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                  OrbitGuard AI suggests prioritizing active debris removal (ADR) planning and collision avoidance re-routing for high-density subsets within this specific distribution to mitigate cascading Kessler Syndrome probabilities.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

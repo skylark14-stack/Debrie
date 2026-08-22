@@ -354,7 +354,7 @@ export default function GroundRelay({ onBack }) {
               Project <span style={{color: 'var(--blue)', fontWeight: 800}}>Vega</span>
             </h2>
             <p style={{ color: 'var(--text-dim)', fontSize: '1.1rem', margin: 0, maxWidth: '800px', marginLeft: 'auto', marginRight: 'auto' }}>
-              Comparing the standard terrestrial twilight observation system with our proposed Vega wide-field hardware upgrade for full night-sky debris tracking.
+              Comparing the standard terrestrial twilight observation system with our proposed Vega wide-field hardware upgrade for extended observation (Twilight Zone + 3-4 hrs).
             </p>
           </div>
           
@@ -412,7 +412,7 @@ export default function GroundRelay({ onBack }) {
                 <tr>
                   <td style={{ padding: '1rem', borderBottom: '1px solid var(--border)', color: 'var(--text-dim)', textAlign: 'left', fontWeight: 'bold' }}>Observation Window</td>
                   <td style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>Twilight Only</td>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>Full Night Sky Capability</td>
+                  <td style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>Twilight Zone + 3-4 hrs</td>
                 </tr>
                 <tr>
                   <td style={{ padding: '1rem', borderBottom: '1px solid var(--border)', color: 'var(--text-dim)', textAlign: 'left', fontWeight: 'bold' }}>Debris Size Detection</td>

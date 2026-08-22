@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import get_db
 from supabase import Client
 
-app = FastAPI(title="OrbitGuard AI API")
+app = FastAPI(title="Vega AI API")
 
 # Setup CORS
 app.add_middleware(
@@ -16,7 +16,7 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to OrbitGuard AI API"}
+    return {"message": "Welcome to Vega AI API"}
 
 @app.get("/api/health/db")
 def health_check_db(db: Client = Depends(get_db)):

@@ -4,6 +4,8 @@ import Sidebar from './components/Sidebar'
 import GroundRelay from './components/GroundRelay'
 import DeorbitTracker from './components/DeorbitTracker'
 import OrbitalWatch from './components/OrbitalWatch'
+import CollisionRisk from './components/CollisionRisk'
+import AuraConcept from './components/AuraConcept'
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -80,6 +82,10 @@ function App() {
                 <p style={{ color: 'var(--text-dimmer)', fontSize: '0.875rem' }}>Successfully removed missions</p>
               </div>
             </section>
+            
+            <div style={{ marginTop: '4rem' }}>
+              <GroundRelay onBack={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
+            </div>
           </>
         )}
 
@@ -96,10 +102,11 @@ function App() {
         )}
 
         {currentPage === 'collision-risk' && (
-          <div style={{ padding: '4rem 0', textAlign: 'center' }}>
-            <h2 style={{ color: 'var(--red)', fontSize: '2rem' }}>Collision Risk Assessment</h2>
-            <p style={{ color: 'var(--text-dim)' }}>Live conjunction alerts and orbital prediction models coming soon...</p>
-          </div>
+          <CollisionRisk />
+        )}
+        
+        {currentPage === 'aura-concept' && (
+          <AuraConcept />
         )}
         
       </div>

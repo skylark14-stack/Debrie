@@ -4,15 +4,63 @@ import { OrbitControls, useTexture, Html } from '@react-three/drei'
 import * as THREE from 'three'
 
 function Earth() {
-  const earthRef = useRef()
-  const texture = useTexture('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+  const earthRef = useRef();
+  const texture = useTexture('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
   
+  useFrame(() => {
+    if (earthRef.current) {
+      // Real-time Earth rotation (1 revolution per 24 hours based on current UTC time)
+      const now = new Date();
+      const utcSeconds = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds() + now.getUTCMilliseconds() / 1000;
+      // Add an offset so that UTC 12:00 aligns the Prime Meridian with the Sun
+      earthRef.current.rotation.y = (utcSeconds / 86400) * Math.PI * 2 + Math.PI; 
+    }
+  });
+
   return (
     <mesh ref={earthRef}>
       <sphereGeometry args={[1, 64, 64]} />
       <meshStandardMaterial map={texture} roughness={0.7} metalness={0.1} />
     </mesh>
-  )
+  );
+}
+
+function IndiaHighlight() {
+  const getVector = (lat, lon) => {
+    const phi = Math.PI / 2 - (lat * Math.PI / 180);
+    const theta = (lon * Math.PI / 180) - Math.PI / 2;
+    return new THREE.Vector3(
+      Math.sin(phi) * Math.cos(theta),
+      Math.cos(phi),
+      -Math.sin(phi) * Math.sin(theta)
+    );
+  };
+  
+  // Coordinates for Central India
+  const pos = getVector(21.0, 78.0);
+  pos.multiplyScalar(1.005); // Just above Earth surface
+
+  const ref = useRef();
+  
+  useFrame((state) => {
+    if (ref.current) {
+      const s = 1 + Math.sin(state.clock.elapsedTime * 4) * 0.2;
+      ref.current.scale.set(s, s, s);
+    }
+  });
+
+  return (
+    <group position={pos} onUpdate={self => self.lookAt(0, 0, 0)}>
+      <mesh>
+        <circleGeometry args={[0.07, 32]} />
+        <meshBasicMaterial color="#3ED9A0" transparent opacity={0.3} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh ref={ref}>
+        <ringGeometry args={[0.07, 0.08, 32]} />
+        <meshBasicMaterial color="#3ED9A0" transparent opacity={0.9} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
 }
 
 function LiveDebris() {
@@ -35,11 +83,14 @@ function LiveDebris() {
 
   const scale = 1 / 6.371;
 
-  useFrame((state, delta) => {
+  useFrame(() => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.15;
+      // Real-time Low Earth Orbit rotation (~90 mins per revolution)
+      const now = new Date();
+      const utcSeconds = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds() + now.getUTCMilliseconds() / 1000;
+      groupRef.current.rotation.y = (utcSeconds / 5400) * Math.PI * 2;
     }
-  })
+  });
 
   return (
     <group ref={groupRef}>
@@ -138,7 +189,8 @@ function DebrisInstanced() {
       
       while(i < counts[type] && attempts < 150000) {
         attempts++;
-        const radius = 1.03 + Math.pow(Math.random(), 2) * 0.4; 
+        // Scatter debris across a massive radius filling the canvas (up to 12 Earth radii)
+        const radius = 1.1 + Math.pow(Math.random(), 3) * 11.0; 
         const theta = Math.random() * 2 * Math.PI;
         const phi = Math.acos((Math.random() * 2) - 1);
         
@@ -214,10 +266,15 @@ function DebrisInstanced() {
     flatShading: true 
   }), [])
 
-  useFrame((state, delta) => {
-    if (meshRef1.current) meshRef1.current.rotation.y += delta * 0.1;
-    if (meshRef2.current) meshRef2.current.rotation.y += delta * 0.1;
-    if (meshRef3.current) meshRef3.current.rotation.y += delta * 0.1;
+  useFrame(() => {
+    // Real-time High Earth Orbit rotation (~12 hours per revolution)
+    const now = new Date();
+    const utcSeconds = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds() + now.getUTCMilliseconds() / 1000;
+    const rotBase = (utcSeconds / 43200) * Math.PI * 2;
+    
+    if (meshRef1.current) meshRef1.current.rotation.y = rotBase;
+    if (meshRef2.current) meshRef2.current.rotation.y = rotBase * 1.1; // Slightly different speed
+    if (meshRef3.current) meshRef3.current.rotation.y = rotBase * 0.9;
   });
 
   return (
@@ -238,6 +295,8 @@ export default function EarthGlobe() {
         <React.Suspense fallback={null}>
           <Earth />
         </React.Suspense>
+        
+        <IndiaHighlight />
         
         {/* Render the massive procedural background debris cloud */}
         <DebrisInstanced />
