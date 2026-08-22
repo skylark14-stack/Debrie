@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+supabase
+pydantic-settings
+pydantic
+sgp4
+apscheduler
+python-jose[cryptography]
+passlib[bcrypt]
+redis
+xgboost
+scikit-learn
+anthropic
+python-multipart
